@@ -1,34 +1,48 @@
 class Creature extends Phaser.GameObjects.Container {
-    constructor(scene, x, y, bodyKey, leftEyeKey, rightEyeKey, mouthKey) {
+    constructor(scene, x, y, bodyKey, limbConfigs, eyeConfigs, mouthConfigs) {
         super(scene, x, y);
         this.scene = scene;
+        this.mouths = [];
+        this.normalMouthConfigs = mouthConfigs;
 
-        // Create the parts
+        // Create the body
         const body = this.scene.add.sprite(0, 0, bodyKey);
-        const leftEye = this.scene.add.sprite(-20, -15, leftEyeKey);
-        const rightEye = this.scene.add.sprite(20, -15, rightEyeKey);
-        this.mouth = this.scene.add.sprite(0, 20, mouthKey); // Adjusted Y position
-        this.normalMouthKey = mouthKey;
-
-        // Add parts to the container
         this.add(body);
 
-        // Add limbs
-        const bodyRadius = 50;
-        const numLimbs = Phaser.Math.Between(2, 6);
-        for (let i = 0; i < numLimbs; i++) {
-            const angle = Phaser.Math.DegToRad(Phaser.Math.Between(0, 360));
-            const x = Math.cos(angle) * bodyRadius;
-            const y = Math.sin(angle) * bodyRadius;
-            const limb = this.scene.add.sprite(x, y, 'creature_limb');
-            limb.setAngle(Phaser.Math.Between(0, 180));
+        // Create limbs
+        limbConfigs.forEach(config => {
+            const limb = this.scene.add.sprite(config.x, config.y, 'creature_limb');
+            limb.setAngle(config.angle);
             this.add(limb);
-        }
+            // Add limb animation
+            this.scene.tweens.add({
+                targets: limb,
+                angle: limb.angle + Phaser.Math.RND.pick([-45, 45]),
+                duration: Phaser.Math.Between(1000, 2000),
+                ease: 'Sine.easeInOut',
+                yoyo: true,
+                repeat: -1
+            });
+            // Add mouth to limb if specified
+            if (config.hasMouth) {
+                const mouthOnLimb = this.scene.add.sprite(limb.x, limb.y + 25, config.mouthKey);
+                this.add(mouthOnLimb);
+                this.mouths.push({ sprite: mouthOnLimb, normalKey: config.mouthKey });
+            }
+        });
 
-        // Add face parts on top of limbs
-        this.add(leftEye);
-        this.add(rightEye);
-        this.add(this.mouth);
+        // Create eyes
+        eyeConfigs.forEach(config => {
+            const eye = this.scene.add.sprite(config.x, config.y, config.key);
+            this.add(eye);
+        });
+
+        // Create mouths on body
+        mouthConfigs.forEach(config => {
+            const mouth = this.scene.add.sprite(config.x, config.y, config.key);
+            this.add(mouth);
+            this.mouths.push({ sprite: mouth, normalKey: config.key });
+        });
 
         // Add the container to the scene
         this.scene.add.existing(this);
@@ -36,9 +50,13 @@ class Creature extends Phaser.GameObjects.Container {
 
     setMood(mood) {
         if (mood === 'sad') {
-            this.mouth.setTexture('creature_mouth_3');
+            this.mouths.forEach(mouth => {
+                mouth.sprite.setTexture('creature_mouth_3');
+            });
         } else {
-            this.mouth.setTexture(this.normalMouthKey);
+            this.mouths.forEach(mouth => {
+                mouth.sprite.setTexture(mouth.normalKey);
+            });
         }
     }
 
@@ -147,6 +165,27 @@ export class GameScene extends Phaser.Scene {
         graphics.fillCircle(10, 10, 10);
         graphics.generateTexture('poo', 20, 20);
         graphics.destroy();
+
+        // Book (intelligence power-up)
+        graphics = this.make.graphics({ fillStyle: { color: 0x0000FF } });
+        graphics.fillRect(0, 0, 50, 60);
+        graphics.generateTexture('powerup_book', 50, 60);
+        graphics.destroy();
+
+        // Soap (hygiene power-up)
+        graphics = this.make.graphics({ fillStyle: { color: 0xFFC0CB } });
+        graphics.fillRoundedRect(0, 0, 60, 40, 10);
+        graphics.generateTexture('powerup_soap', 60, 40);
+        graphics.destroy();
+
+        // Barbell (muscle power-up)
+        graphics = this.make.graphics();
+        graphics.fillStyle(0x36454F); // Charcoal
+        graphics.fillRect(0, 15, 60, 10); // Bar
+        graphics.fillRect(5, 5, 10, 30);  // Left weight
+        graphics.fillRect(45, 5, 10, 30); // Right weight
+        graphics.generateTexture('powerup_barbell', 60, 40);
+        graphics.destroy();
     }
 
     create() {
@@ -159,6 +198,7 @@ export class GameScene extends Phaser.Scene {
         };
         this.rebirths = 0;
         this.idleTimer = null;
+        this.hasAchievedNirvana = false;
 
         this.generateAndDisplayCreature();
         this.createUI();
@@ -166,10 +206,47 @@ export class GameScene extends Phaser.Scene {
         this.pooGroup = this.add.group();
         this.updatePooPiles();
         this.resetIdleTimer();
+
+        // Power-up implementation
+        this.powerupGroup = this.add.group();
+        this.time.addEvent({
+            delay: 7000, // Spawn every 7 seconds
+            callback: this.spawnPowerup,
+            callbackScope: this,
+            loop: true
+        });
+    }
+
+    spawnPowerup() {
+        const powerupTypes = [
+            { key: 'powerup_book', stat: 'intelligence', amount: 15 },
+            { key: 'powerup_soap', stat: 'hygiene', amount: 10 },
+            { key: 'powerup_barbell', stat: 'muscle', amount: 10 }
+        ];
+
+        const type = Phaser.Math.RND.pick(powerupTypes);
+        const x = Phaser.Math.Between(100, this.sys.game.config.width - 100);
+        const y = Phaser.Math.Between(250, this.sys.game.config.height - 150);
+
+        const powerup = this.powerupGroup.create(x, y, type.key);
+        powerup.setInteractive();
+
+        powerup.on('pointerdown', () => {
+            this.increaseStat(type.stat, type.amount);
+            powerup.destroy();
+        });
+
+        // Make power-up disappear after a while
+        this.time.delayedCall(5000, () => {
+            if (powerup.active) {
+                powerup.destroy();
+            }
+        });
     }
 
     createUI() {
         this.createStatDisplays();
+        this.createScreenshotButton();
 
         // Button positions
         const buttonY = this.sys.game.config.height - 80;
@@ -299,29 +376,61 @@ export class GameScene extends Phaser.Scene {
     }
 
     generateAndDisplayCreature() {
-        const bodyOptions = ['creature_body']; // Only one body type for now
+        const bodyKey = 'creature_body';
         const eyeOptions = ['creature_eyes_1', 'creature_eyes_2'];
-        const mouthOptions = ['creature_mouth_1', 'creature_mouth_2', 'creature_mouth_3'];
+        const mouthOptions = ['creature_mouth_1', 'creature_mouth_2']; // Normal mouths only
+        const bodyRadius = 50;
 
-        // Randomly select parts
-        const bodyKey = Phaser.Math.RND.pick(bodyOptions);
-        const leftEyeKey = Phaser.Math.RND.pick(eyeOptions);
-        const rightEyeKey = Phaser.Math.RND.pick(eyeOptions);
-        const mouthKey = Phaser.Math.RND.pick(mouthOptions);
+        // --- Generate Configs ---
+        const limbConfigs = [];
+        const numLimbs = Phaser.Math.Between(2, 8);
+        for (let i = 0; i < numLimbs; i++) {
+            const hasMouth = Phaser.Math.RND.frac() < 0.25; // 25% chance of mouth on limb
+            limbConfigs.push({
+                x: Math.cos(Phaser.Math.DegToRad(i * (360 / numLimbs))) * bodyRadius,
+                y: Math.sin(Phaser.Math.DegToRad(i * (360 / numLimbs))) * bodyRadius,
+                angle: Phaser.Math.Between(0, 360),
+                hasMouth: hasMouth,
+                mouthKey: hasMouth ? Phaser.Math.RND.pick(mouthOptions) : null
+            });
+        }
 
-        // Create the creature
+        const eyeConfigs = [];
+        const numEyes = Phaser.Math.Between(1, 4);
+        for (let i = 0; i < numEyes; i++) {
+            eyeConfigs.push({
+                x: Phaser.Math.Between(-35, 35),
+                y: Phaser.Math.Between(-30, 0),
+                key: Phaser.Math.RND.pick(eyeOptions)
+            });
+        }
+
+        const mouthConfigs = [];
+        const numMouths = Phaser.Math.Between(1, 2);
+        for (let i = 0; i < numMouths; i++) {
+            mouthConfigs.push({
+                x: Phaser.Math.Between(-20, 20),
+                y: Phaser.Math.Between(10, 35),
+                key: Phaser.Math.RND.pick(mouthOptions)
+            });
+        }
+
+        // --- Create Creature ---
         this.creature = new Creature(
             this,
             this.sys.game.config.width / 2,
             this.sys.game.config.height / 2,
             bodyKey,
-            leftEyeKey,
-            rightEyeKey,
-            mouthKey
+            limbConfigs,
+            eyeConfigs,
+            mouthConfigs
         );
     }
 
     update() {
+        if (this.hasAchievedNirvana) {
+            return; // Stop all updates if Nirvana is achieved
+        }
         this.checkCreatureMood();
         this.checkForRebirth();
     }
@@ -353,6 +462,26 @@ export class GameScene extends Phaser.Scene {
         this.rebirths++;
         this.rebirthText.setText(`Rebirths: ${this.rebirths}`);
 
+        // CHECK FOR NIRVANA
+        if (this.rebirths >= 100) {
+            this.hasAchievedNirvana = true;
+            this.cameras.main.setBackgroundColor('#90EE90'); // Light green
+            this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'Achieved Nirvana', {
+                fontSize: '64px',
+                color: '#ffffff',
+                align: 'center',
+                stroke: '#000000',
+                strokeThickness: 6
+            }).setOrigin(0.5);
+
+            // Stop timers and hide game elements
+            this.time.removeAllEvents();
+            this.creature.setVisible(false);
+            this.powerupGroup.clear(true, true);
+            this.pooGroup.clear(true, true);
+            return;
+        }
+
         // 3. Reset stats
         for (const stat in this.stats) {
             this.stats[stat] = 50;
@@ -378,4 +507,39 @@ export class GameScene extends Phaser.Scene {
         }
     }
 
+    createScreenshotButton() {
+        const button = this.add.dom(this.sys.game.config.width / 2, 20).createFromHTML('<button style="font-size: 18px; padding: 5px 10px;">Screenshot your creature</button>');
+        button.addListener('click');
+        button.on('click', () => {
+            this.game.renderer.snapshot(image => {
+                this.copyImageToClipboard(image);
+            });
+        });
+    }
+
+    async copyImageToClipboard(image) {
+        try {
+            const blob = await this.canvasToBlob(image);
+            await navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+            ]);
+            console.log('Image copied to clipboard.');
+            // Optional: Add a visual confirmation for the user
+            const feedbackText = this.add.text(this.sys.game.config.width / 2, 50, 'Copied to clipboard!', { fontSize: '24px', color: '#00ff00' }).setOrigin(0.5);
+            this.time.delayedCall(2000, () => feedbackText.destroy());
+        } catch (err) {
+            console.error('Failed to copy image: ', err);
+            // Optional: Add a visual error message for the user
+            const feedbackText = this.add.text(this.sys.game.config.width / 2, 50, 'Failed to copy image.', { fontSize: '24px', color: '#ff0000' }).setOrigin(0.5);
+            this.time.delayedCall(2000, () => feedbackText.destroy());
+        }
+    }
+
+    canvasToBlob(canvas) {
+        return new Promise(resolve => {
+            canvas.toBlob(blob => {
+                resolve(blob);
+            }, 'image/png');
+        });
+    }
 }
