@@ -86,8 +86,7 @@ export class GameScene extends Phaser.Scene {
         // Mouth style 1 (smile)
         graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
         graphics.beginPath();
-        graphics.moveTo(5, 5);
-        graphics.quadraticCurveTo(25, 30, 45, 5);
+        graphics.arc(25, 10, 20, 0, Math.PI, false);
         graphics.strokePath();
         graphics.generateTexture('creature_mouth_1', 50, 25);
         graphics.destroy();
@@ -101,8 +100,7 @@ export class GameScene extends Phaser.Scene {
         // Mouth style 3 (sad)
         graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
         graphics.beginPath();
-        graphics.moveTo(5, 25);
-        graphics.quadraticCurveTo(25, 0, 45, 25);
+        graphics.arc(25, 20, 20, 0, Math.PI, true);
         graphics.strokePath();
         graphics.generateTexture('creature_mouth_3', 50, 30);
         graphics.destroy();
