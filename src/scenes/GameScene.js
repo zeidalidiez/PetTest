@@ -1,17 +1,19 @@
 class Creature extends Phaser.GameObjects.Container {
-    constructor(scene, x, y, bodyKey, eyesKey, mouthKey) {
+    constructor(scene, x, y, bodyKey, leftEyeKey, rightEyeKey, mouthKey) {
         super(scene, x, y);
         this.scene = scene;
 
         // Create the parts
         const body = this.scene.add.sprite(0, 0, bodyKey);
-        const eyes = this.scene.add.sprite(0, -10, eyesKey);
-        this.mouth = this.scene.add.sprite(0, 25, mouthKey);
+        const leftEye = this.scene.add.sprite(-20, -15, leftEyeKey);
+        const rightEye = this.scene.add.sprite(20, -15, rightEyeKey);
+        this.mouth = this.scene.add.sprite(0, 20, mouthKey); // Adjusted Y position
         this.normalMouthKey = mouthKey;
 
         // Add parts to the container
         this.add(body);
-        this.add(eyes);
+        this.add(leftEye);
+        this.add(rightEye);
         this.add(this.mouth);
 
         // Add the container to the scene
@@ -86,7 +88,7 @@ export class GameScene extends Phaser.Scene {
         // Mouth style 1 (smile)
         graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
         graphics.beginPath();
-        graphics.arc(25, 10, 20, 0, Math.PI, false);
+        graphics.arc(25, 15, 10, 0, Math.PI, false); // Smaller radius, adjusted Y
         graphics.strokePath();
         graphics.generateTexture('creature_mouth_1', 50, 25);
         graphics.destroy();
@@ -100,7 +102,7 @@ export class GameScene extends Phaser.Scene {
         // Mouth style 3 (sad)
         graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
         graphics.beginPath();
-        graphics.arc(25, 20, 20, 0, Math.PI, true);
+        graphics.arc(25, 15, 10, 0, Math.PI, true); // Smaller radius, adjusted Y
         graphics.strokePath();
         graphics.generateTexture('creature_mouth_3', 50, 30);
         graphics.destroy();
@@ -231,17 +233,18 @@ export class GameScene extends Phaser.Scene {
 
     createStatDisplays() {
         this.statBars = {};
-        const statY = 50;
+        const statY1 = 50;
+        const statY2 = 150; // Increased vertical spacing
 
         // Create stat bars
-        this.statBars.hygiene = this.createStatBar(180, statY, 'Hygiene', this.stats.hygiene);
-        this.statBars.fun = this.createStatBar(180, statY + 60, 'Fun', this.stats.fun);
-        this.statBars.muscle = this.createStatBar(this.sys.game.config.width - 180, statY, 'Muscle', this.stats.muscle);
-        this.statBars.intelligence = this.createStatBar(this.sys.game.config.width - 180, statY + 60, 'Intelligence', this.stats.intelligence);
+        this.statBars.hygiene = this.createStatBar(200, statY1, 'Hygiene', this.stats.hygiene);
+        this.statBars.fun = this.createStatBar(200, statY2, 'Fun', this.stats.fun);
+        this.statBars.muscle = this.createStatBar(this.sys.game.config.width - 200, statY1, 'Muscle', this.stats.muscle);
+        this.statBars.intelligence = this.createStatBar(this.sys.game.config.width - 200, statY2, 'Intelligence', this.stats.intelligence);
 
         // Rebirth counter
-        this.rebirthText = this.add.text(this.sys.game.config.width / 2, 50, `Rebirths: ${this.rebirths}`, {
-            fontSize: '32px',
+        this.rebirthText = this.add.text(this.sys.game.config.width / 2, 80, `Rebirths: ${this.rebirths}`, {
+            fontSize: '40px',
             color: '#000000'
         }).setOrigin(0.5);
     }
@@ -253,9 +256,10 @@ export class GameScene extends Phaser.Scene {
         const barWidth = bg.width - 20;
         const barHeight = bg.height - 20;
 
-        const textLabel = this.add.text(x - bg.width/2 - 10, y, label, {
+        // Position label below the bar
+        const textLabel = this.add.text(x, y + 35, label, {
             fontSize: '24px', color: '#000000'
-        }).setOrigin(1, 0.5);
+        }).setOrigin(0.5);
 
         const valueText = this.add.text(x, y, '', {
             fontSize: '20px', color: '#ffffff'
@@ -280,7 +284,8 @@ export class GameScene extends Phaser.Scene {
 
         // Randomly select parts
         const bodyKey = Phaser.Math.RND.pick(bodyOptions);
-        const eyesKey = Phaser.Math.RND.pick(eyeOptions);
+        const leftEyeKey = Phaser.Math.RND.pick(eyeOptions);
+        const rightEyeKey = Phaser.Math.RND.pick(eyeOptions);
         const mouthKey = Phaser.Math.RND.pick(mouthOptions);
 
         // Create the creature
@@ -289,7 +294,8 @@ export class GameScene extends Phaser.Scene {
             this.sys.game.config.width / 2,
             this.sys.game.config.height / 2,
             bodyKey,
-            eyesKey,
+            leftEyeKey,
+            rightEyeKey,
             mouthKey
         );
     }

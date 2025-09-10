@@ -2,7 +2,7 @@ import { GameScene } from './scenes/GameScene.js';
 
 const config = {
     type: Phaser.CANVAS,
-    title: 'Zeid`s Pet game',
+    title: 'Tamagotchi',
     description: 'A virtual pet game.',
     parent: 'game-container',
     width: 1280,
