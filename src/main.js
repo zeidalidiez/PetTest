@@ -1,12 +1,15 @@
 import { GameScene } from './scenes/GameScene.js';
 
 const config = {
-    type: Phaser.CANVAS,
+    type: Phaser.AUTO,
     title: 'Tamagotchi',
     description: 'A virtual pet game.',
     parent: 'game-container',
     width: 1280,
     height: 720,
+    dom: {
+        createContainer: true
+    },
     backgroundColor: '#FFFFFF',
     pixelArt: false,
     scene: [
