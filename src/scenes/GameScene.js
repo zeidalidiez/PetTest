@@ -11,10 +11,12 @@ class Creature extends Phaser.GameObjects.Container {
         this.add(body);
 
         // Create and display the name
-        const nameText = this.scene.add.text(0, -80, this.creatureName, {
-            fontSize: '28px',
+        const nameText = this.scene.add.text(0, 80, `My name is ${this.creatureName}`, {
+            fontSize: '24px',
             color: '#000000',
-            align: 'center'
+            align: 'center',
+            backgroundColor: '#ffffff',
+            padding: { x: 10, y: 5 }
         }).setOrigin(0.5);
         this.add(nameText);
 
@@ -100,12 +102,7 @@ export class GameScene extends Phaser.Scene {
 
     constructor() {
         super('GameScene');
-        this.syllables = [
-            'blorp', 'zib', 'wob', 'fizz', 'glop', 'zeek', 'narg', 'plix', 'squonk', 'zorp',
-            'flum', 'grib', 'snarf', 'bleep', 'zorp', 'quib', 'meep', 'snik', 'flib', 'glab',
-            'klorp', 'vronk', 'yib', 'wum', 'zog', 'bix', 'pleb', 'scrob', 'thwump', 'zang',
-            'jix', 'yarp', 'gloop', 'flonk', 'zibble', 'wobble', 'grak', 'spleen', 'florp', 'zink'
-        ];
+        this.syllables = []; // Will be populated from file
     }
 
     generateRandomName() {
@@ -124,6 +121,9 @@ export class GameScene extends Phaser.Scene {
         // Generate placeholder assets
         this.generateCreatureAssets();
         this.generateUiAssets();
+
+        // Load syllables for name generation
+        this.load.text('syllables', 'assets/syllables.txt');
     }
 
     generateCreatureAssets() {
@@ -131,14 +131,20 @@ export class GameScene extends Phaser.Scene {
         const color1 = Phaser.Display.Color.RandomRGB(100, 255);
         const color2 = Phaser.Display.Color.RandomRGB(100, 255);
         let graphics = this.make.graphics();
-        graphics.fillGradientStyle(color1.color, color2.color, color1.color, color2.color, 1);
-        graphics.fillCircle(50, 50, 50);
+        // Fix: Added alpha values to the gradient call
+        graphics.fillGradientStyle(color1.color, color2.color, color1.color, color2.color, 1, 1, 1, 1);
+
+        // Feature: Generate a random polygon for the body shape
+        const polygon = Phaser.Geom.Polygon.Random(new Phaser.Geom.Circle(50, 50, 50), 12);
+        graphics.fillPoints(polygon.points, true);
+
         graphics.generateTexture('creature_body', 100, 100);
         graphics.destroy();
 
         // Limb
         graphics = this.make.graphics();
-        graphics.fillStyle(color1.color); // Use one of the body's colors for the limbs
+        // Also give limbs a gradient
+        graphics.fillGradientStyle(color1.color, color2.color, color1.color, color2.color, 1, 1, 1, 1);
         graphics.fillRoundedRect(0, 0, 20, 50, 8);
         graphics.generateTexture('creature_limb', 20, 50);
         graphics.destroy();
@@ -230,6 +236,9 @@ export class GameScene extends Phaser.Scene {
         this.rebirths = 0;
         this.idleTimer = null;
         this.hasAchievedNirvana = false;
+
+        // Parse syllables from loaded text file
+        this.syllables = this.cache.text.get('syllables').split('\n').filter(s => s.length > 0);
 
         this.generateAndDisplayCreature();
         this.createUI();
