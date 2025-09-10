@@ -1,18 +1,28 @@
 class Creature extends Phaser.GameObjects.Container {
-    constructor(scene, x, y, bodyKey, limbConfigs, eyeConfigs, mouthConfigs) {
+    constructor(scene, x, y, name, bodyKey, limbConfigs, eyeConfigs, mouthConfigs) {
         super(scene, x, y);
         this.scene = scene;
         this.mouths = [];
         this.normalMouthConfigs = mouthConfigs;
+        this.creatureName = name;
 
         // Create the body
         const body = this.scene.add.sprite(0, 0, bodyKey);
         this.add(body);
 
+        // Create and display the name
+        const nameText = this.scene.add.text(0, -80, this.creatureName, {
+            fontSize: '28px',
+            color: '#000000',
+            align: 'center'
+        }).setOrigin(0.5);
+        this.add(nameText);
+
         // Create limbs
         limbConfigs.forEach(config => {
             const limb = this.scene.add.sprite(config.x, config.y, 'creature_limb');
             limb.setAngle(config.angle);
+            limb.setScale(1, Phaser.Math.FloatBetween(0.5, 1.5)); // Randomize length
             this.add(limb);
             // Add limb animation
             this.scene.tweens.add({
@@ -90,6 +100,24 @@ export class GameScene extends Phaser.Scene {
 
     constructor() {
         super('GameScene');
+        this.syllables = [
+            'blorp', 'zib', 'wob', 'fizz', 'glop', 'zeek', 'narg', 'plix', 'squonk', 'zorp',
+            'flum', 'grib', 'snarf', 'bleep', 'zorp', 'quib', 'meep', 'snik', 'flib', 'glab',
+            'klorp', 'vronk', 'yib', 'wum', 'zog', 'bix', 'pleb', 'scrob', 'thwump', 'zang',
+            'jix', 'yarp', 'gloop', 'flonk', 'zibble', 'wobble', 'grak', 'spleen', 'florp', 'zink'
+        ];
+    }
+
+    generateRandomName() {
+        const numSyllables = Phaser.Math.Between(2, 4);
+        let name = '';
+        for (let i = 0; i < numSyllables; i++) {
+            name += Phaser.Math.RND.pick(this.syllables);
+            if (i < numSyllables - 1 && Phaser.Math.RND.frac() < 0.2) {
+                name += ' '; // 20% chance of a space
+            }
+        }
+        return name.charAt(0).toUpperCase() + name.slice(1);
     }
 
     preload() {
@@ -100,14 +128,17 @@ export class GameScene extends Phaser.Scene {
 
     generateCreatureAssets() {
         // Body
-        const randomColor = Phaser.Display.Color.RandomRGB(100, 255).color;
-        let graphics = this.make.graphics({ fillStyle: { color: randomColor } });
+        const color1 = Phaser.Display.Color.RandomRGB(100, 255);
+        const color2 = Phaser.Display.Color.RandomRGB(100, 255);
+        let graphics = this.make.graphics();
+        graphics.fillGradientStyle(color1.color, color2.color, color1.color, color2.color, 1);
         graphics.fillCircle(50, 50, 50);
         graphics.generateTexture('creature_body', 100, 100);
         graphics.destroy();
 
         // Limb
-        graphics = this.make.graphics({ fillStyle: { color: randomColor } });
+        graphics = this.make.graphics();
+        graphics.fillStyle(color1.color); // Use one of the body's colors for the limbs
         graphics.fillRoundedRect(0, 0, 20, 50, 8);
         graphics.generateTexture('creature_limb', 20, 50);
         graphics.destroy();
@@ -420,6 +451,7 @@ export class GameScene extends Phaser.Scene {
             this,
             this.sys.game.config.width / 2,
             this.sys.game.config.height / 2,
+            this.generateRandomName(),
             bodyKey,
             limbConfigs,
             eyeConfigs,
@@ -519,7 +551,7 @@ export class GameScene extends Phaser.Scene {
 
     async copyImageToClipboard(image) {
         try {
-            const blob = await this.canvasToBlob(image);
+            const blob = await this.imageToBlob(image);
             await navigator.clipboard.write([
                 new ClipboardItem({ 'image/png': blob })
             ]);
@@ -535,8 +567,13 @@ export class GameScene extends Phaser.Scene {
         }
     }
 
-    canvasToBlob(canvas) {
+    imageToBlob(image) {
         return new Promise(resolve => {
+            const canvas = document.createElement('canvas');
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const context = canvas.getContext('2d');
+            context.drawImage(image, 0, 0);
             canvas.toBlob(blob => {
                 resolve(blob);
             }, 'image/png');
