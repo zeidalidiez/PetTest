@@ -10,13 +10,7 @@ class Creature extends Phaser.GameObjects.Container {
         const body = this.scene.add.sprite(0, 0, bodyKey);
         this.add(body);
 
-        // Create and display the name
-        const nameText = this.scene.add.text(0, -80, this.creatureName, {
-            fontSize: '28px',
-            color: '#000000',
-            align: 'center'
-        }).setOrigin(0.5);
-        this.add(nameText);
+        // Name is now created in the main scene's UI
 
         // Create limbs
         limbConfigs.forEach(config => {
@@ -100,12 +94,22 @@ export class GameScene extends Phaser.Scene {
 
     constructor() {
         super('GameScene');
-        this.syllables = [
-            'blorp', 'zib', 'wob', 'fizz', 'glop', 'zeek', 'narg', 'plix', 'squonk', 'zorp',
-            'flum', 'grib', 'snarf', 'bleep', 'zorp', 'quib', 'meep', 'snik', 'flib', 'glab',
-            'klorp', 'vronk', 'yib', 'wum', 'zog', 'bix', 'pleb', 'scrob', 'thwump', 'zang',
-            'jix', 'yarp', 'gloop', 'flonk', 'zibble', 'wobble', 'grak', 'spleen', 'florp', 'zink'
-        ];
+        this.syllables = []; // Will be populated from file
+    }
+
+    generateBlobShape(centerX, centerY, radius, points) {
+        const shapePoints = [];
+        const angleStep = (Math.PI * 2) / points;
+
+        for (let i = 0; i < points; i++) {
+            const angle = i * angleStep;
+            // Add some randomness to the radius for a blobby effect
+            const randomRadius = radius + Phaser.Math.FloatBetween(-radius * 0.2, radius * 0.2);
+            const x = centerX + Math.cos(angle) * randomRadius;
+            const y = centerY + Math.sin(angle) * randomRadius;
+            shapePoints.push(new Phaser.Geom.Point(x, y));
+        }
+        return shapePoints;
     }
 
     generateRandomName() {
@@ -124,21 +128,27 @@ export class GameScene extends Phaser.Scene {
         // Generate placeholder assets
         this.generateCreatureAssets();
         this.generateUiAssets();
+
+        // Load syllables for name generation
+        this.load.text('syllables', 'assets/syllables.txt');
     }
 
     generateCreatureAssets() {
         // Body
-        const color1 = Phaser.Display.Color.RandomRGB(100, 255);
-        const color2 = Phaser.Display.Color.RandomRGB(100, 255);
+        const randomColor = Phaser.Display.Color.RandomRGB(100, 255);
         let graphics = this.make.graphics();
-        graphics.fillGradientStyle(color1.color, color2.color, color1.color, color2.color, 1);
-        graphics.fillCircle(50, 50, 50);
+        graphics.fillStyle(randomColor.color, 1);
+
+        // Feature: Generate a random polygon for the body shape
+        const points = this.generateBlobShape(50, 50, 45, 12);
+        graphics.fillPoints(points, true);
+
         graphics.generateTexture('creature_body', 100, 100);
         graphics.destroy();
 
         // Limb
         graphics = this.make.graphics();
-        graphics.fillStyle(color1.color); // Use one of the body's colors for the limbs
+        graphics.fillStyle(randomColor.color, 1); // Match the solid color
         graphics.fillRoundedRect(0, 0, 20, 50, 8);
         graphics.generateTexture('creature_limb', 20, 50);
         graphics.destroy();
@@ -217,6 +227,19 @@ export class GameScene extends Phaser.Scene {
         graphics.fillRect(45, 5, 10, 30); // Right weight
         graphics.generateTexture('powerup_barbell', 60, 40);
         graphics.destroy();
+
+        // Controller (fun power-up)
+        graphics = this.make.graphics();
+        graphics.fillStyle(0x111111);
+        graphics.fillRoundedRect(0, 0, 80, 50, 15); // Main body
+        graphics.fillStyle(0xdddddd);
+        graphics.fillCircle(20, 25, 8); // D-pad
+        graphics.fillStyle(0xff0000);
+        graphics.fillCircle(60, 15, 8); // Red button
+        graphics.fillStyle(0x0000ff);
+        graphics.fillCircle(70, 35, 8); // Blue button
+        graphics.generateTexture('powerup_controller', 80, 50);
+        graphics.destroy();
     }
 
     create() {
@@ -230,6 +253,9 @@ export class GameScene extends Phaser.Scene {
         this.rebirths = 0;
         this.idleTimer = null;
         this.hasAchievedNirvana = false;
+
+        // Parse syllables from loaded text file
+        this.syllables = this.cache.text.get('syllables').split('\n').filter(s => s.length > 0);
 
         this.generateAndDisplayCreature();
         this.createUI();
@@ -252,7 +278,8 @@ export class GameScene extends Phaser.Scene {
         const powerupTypes = [
             { key: 'powerup_book', stat: 'intelligence', amount: 15 },
             { key: 'powerup_soap', stat: 'hygiene', amount: 10 },
-            { key: 'powerup_barbell', stat: 'muscle', amount: 10 }
+            { key: 'powerup_barbell', stat: 'muscle', amount: 10 },
+            { key: 'powerup_controller', stat: 'fun', amount: 15 }
         ];
 
         const type = Phaser.Math.RND.pick(powerupTypes);
@@ -279,8 +306,22 @@ export class GameScene extends Phaser.Scene {
         this.createStatDisplays();
         this.createScreenshotButton();
 
+        // Name Tag
+        this.nameTag = this.add.text(
+            this.sys.game.config.width / 2,
+            this.sys.game.config.height - 120, // Position above buttons
+            `My name is ${this.creature.creatureName}`,
+            {
+                fontSize: '24px',
+                color: '#000000',
+                align: 'center',
+                backgroundColor: 'rgba(255,255,255,0.7)',
+                padding: { x: 10, y: 5 }
+            }
+        ).setOrigin(0.5);
+
         // Button positions
-        const buttonY = this.sys.game.config.height - 80;
+        const buttonY = this.sys.game.config.height - 60; // Moved buttons down
         const buttonPositions = {
             feed: this.sys.game.config.width * 0.2,
             play: this.sys.game.config.width * 0.4,
@@ -529,6 +570,9 @@ export class GameScene extends Phaser.Scene {
 
         // 6. Generate new creature
         this.generateAndDisplayCreature();
+
+        // 7. Update name tag
+        this.nameTag.setText(`My name is ${this.creature.creatureName}`);
     }
 
     checkCreatureMood() {
