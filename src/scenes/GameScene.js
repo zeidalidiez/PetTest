@@ -142,24 +142,17 @@ export class GameScene extends Phaser.Scene {
     }
 
     generateCreatureAssets() {
-        // Body
-        const color1 = Phaser.Display.Color.RandomRGB(100, 255);
-        const color2 = Phaser.Display.Color.RandomRGB(100, 255);
+        // Body (DEBUGGING STEP A: Simple solid circle)
+        const randomColor = Phaser.Display.Color.RandomRGB(100, 255);
         let graphics = this.make.graphics();
-        // Fix: Added alpha values to the gradient call
-        graphics.fillGradientStyle(color1.color, color2.color, color1.color, color2.color, 1, 1, 1, 1);
-
-        // Feature: Generate a random polygon for the body shape
-        const points = this.generateBlobShape(50, 50, 45, 12);
-        graphics.fillPoints(points, true);
-
+        graphics.fillStyle(randomColor.color, 1);
+        graphics.fillCircle(50, 50, 50);
         graphics.generateTexture('creature_body', 100, 100);
         graphics.destroy();
 
         // Limb
         graphics = this.make.graphics();
-        // Also give limbs a gradient
-        graphics.fillGradientStyle(color1.color, color2.color, color1.color, color2.color, 1, 1, 1, 1);
+        graphics.fillStyle(randomColor.color, 1); // Match the solid color
         graphics.fillRoundedRect(0, 0, 20, 50, 8);
         graphics.generateTexture('creature_limb', 20, 50);
         graphics.destroy();
