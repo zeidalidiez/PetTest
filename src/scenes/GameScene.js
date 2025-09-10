@@ -12,6 +12,20 @@ class Creature extends Phaser.GameObjects.Container {
 
         // Add parts to the container
         this.add(body);
+
+        // Add limbs
+        const bodyRadius = 50;
+        const numLimbs = Phaser.Math.Between(2, 6);
+        for (let i = 0; i < numLimbs; i++) {
+            const angle = Phaser.Math.DegToRad(Phaser.Math.Between(0, 360));
+            const x = Math.cos(angle) * bodyRadius;
+            const y = Math.sin(angle) * bodyRadius;
+            const limb = this.scene.add.sprite(x, y, 'creature_limb');
+            limb.setAngle(Phaser.Math.Between(0, 180));
+            this.add(limb);
+        }
+
+        // Add face parts on top of limbs
         this.add(leftEye);
         this.add(rightEye);
         this.add(this.mouth);
@@ -68,9 +82,16 @@ export class GameScene extends Phaser.Scene {
 
     generateCreatureAssets() {
         // Body
-        let graphics = this.make.graphics({ fillStyle: { color: 0x00ff00 } });
+        const randomColor = Phaser.Display.Color.RandomRGB(100, 255).color;
+        let graphics = this.make.graphics({ fillStyle: { color: randomColor } });
         graphics.fillCircle(50, 50, 50);
         graphics.generateTexture('creature_body', 100, 100);
+        graphics.destroy();
+
+        // Limb
+        graphics = this.make.graphics({ fillStyle: { color: randomColor } });
+        graphics.fillRoundedRect(0, 0, 20, 50, 8);
+        graphics.generateTexture('creature_limb', 20, 50);
         graphics.destroy();
 
         // Eyes style 1
@@ -168,11 +189,11 @@ export class GameScene extends Phaser.Scene {
         // Add button events
         this.feedButton.on('pointerdown', () => this.increaseStat('muscle'));
         this.playButton.on('pointerdown', () => this.increaseStat('fun'));
-        this.cleanButton.on('pointerdown', () => this.increaseStat('hygiene', 15)); // As per user request
+        this.cleanButton.on('pointerdown', () => this.increaseStat('hygiene'));
         this.studyButton.on('pointerdown', () => this.increaseStat('intelligence'));
     }
 
-    increaseStat(stat, amount = 10) {
+    increaseStat(stat, amount = 1) {
         // Stop any idle animation and reset the timer
         this.creature.stopIdleAnimation();
         this.resetIdleTimer();
