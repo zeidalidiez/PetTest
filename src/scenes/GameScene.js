@@ -105,6 +105,21 @@ export class GameScene extends Phaser.Scene {
         this.syllables = []; // Will be populated from file
     }
 
+    generateBlobShape(centerX, centerY, radius, points) {
+        const shapePoints = [];
+        const angleStep = (Math.PI * 2) / points;
+
+        for (let i = 0; i < points; i++) {
+            const angle = i * angleStep;
+            // Add some randomness to the radius for a blobby effect
+            const randomRadius = radius + Phaser.Math.FloatBetween(-radius * 0.2, radius * 0.2);
+            const x = centerX + Math.cos(angle) * randomRadius;
+            const y = centerY + Math.sin(angle) * randomRadius;
+            shapePoints.push(new Phaser.Geom.Point(x, y));
+        }
+        return shapePoints;
+    }
+
     generateRandomName() {
         const numSyllables = Phaser.Math.Between(2, 4);
         let name = '';
@@ -135,8 +150,8 @@ export class GameScene extends Phaser.Scene {
         graphics.fillGradientStyle(color1.color, color2.color, color1.color, color2.color, 1, 1, 1, 1);
 
         // Feature: Generate a random polygon for the body shape
-        const polygon = Phaser.Geom.Polygon.Random(new Phaser.Geom.Circle(50, 50, 50), 12);
-        graphics.fillPoints(polygon.points, true);
+        const points = this.generateBlobShape(50, 50, 45, 12);
+        graphics.fillPoints(points, true);
 
         graphics.generateTexture('creature_body', 100, 100);
         graphics.destroy();
