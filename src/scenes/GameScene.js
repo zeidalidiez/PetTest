@@ -21,8 +21,9 @@ class Creature extends Phaser.GameObjects.Container {
             // Add limb animation
             this.scene.tweens.add({
                 targets: limb,
-                angle: limb.angle + Phaser.Math.RND.pick([-45, 45]),
-                duration: Phaser.Math.Between(1000, 2000),
+                angle: limb.angle + Phaser.Math.RND.pick([-90, 90]),
+                scaleY: Phaser.Math.FloatBetween(0.5, 2.0),
+                duration: Phaser.Math.Between(500, 1500),
                 ease: 'Sine.easeInOut',
                 yoyo: true,
                 repeat: -1
@@ -70,8 +71,8 @@ class Creature extends Phaser.GameObjects.Container {
         }
         this.idleTween = this.scene.tweens.add({
             targets: this,
-            y: this.y - 10,
-            angle: { from: -5, to: 5 },
+            y: this.y - 25,
+            angle: { from: -10, to: 10 },
             duration: 1000,
             ease: 'Sine.easeInOut',
             yoyo: true,
@@ -340,10 +341,37 @@ export class GameScene extends Phaser.Scene {
         this.studyButton = this.createButton(buttonPositions.study, buttonY, 'StudyButton');
 
         // Add button events
-        this.feedButton.on('pointerdown', () => this.increaseStat('muscle'));
-        this.playButton.on('pointerdown', () => this.increaseStat('fun'));
-        this.cleanButton.on('pointerdown', () => this.increaseStat('hygiene'));
-        this.studyButton.on('pointerdown', () => this.increaseStat('intelligence'));
+        const buttons = [
+            { button: this.feedButton, stat: 'muscle' },
+            { button: this.playButton, stat: 'fun' },
+            { button: this.cleanButton, stat: 'hygiene' },
+            { button: this.studyButton, stat: 'intelligence' }
+        ];
+
+        buttons.forEach(({ button, stat }) => {
+            button.on('pointerdown', () => {
+                if (this.statIncreaseTimer) {
+                    this.statIncreaseTimer.remove();
+                }
+                this.increaseStat(stat);
+                this.statIncreaseTimer = this.time.addEvent({
+                    delay: 500,
+                    callback: () => this.increaseStat(stat, 1),
+                    callbackScope: this,
+                    loop: true
+                });
+            });
+
+            const stopTimer = () => {
+                if (this.statIncreaseTimer) {
+                    this.statIncreaseTimer.remove();
+                    this.statIncreaseTimer = null;
+                }
+            };
+
+            button.on('pointerup', stopTimer);
+            button.on('pointerout', stopTimer);
+        });
     }
 
     increaseStat(stat, amount = 1) {
@@ -387,14 +415,6 @@ export class GameScene extends Phaser.Scene {
     createButton(x, y, key) {
         const button = this.add.sprite(x, y, key).setInteractive();
         button.setScale(0.2);
-
-        // Add hover effect
-        button.on('pointerover', () => {
-            button.setTint(0xcccccc);
-        });
-        button.on('pointerout', () => {
-            button.clearTint();
-        });
 
         return button;
     }
