@@ -110,46 +110,35 @@ export class GameScene extends Phaser.Scene {
     }
 
     generateUniqueRandomNumber() {
-                let newNumber;
-                
-                // If there's no last number, we don't need to check for uniqueness
-                if (this.lastNumber === null) {
-                   newNumber = Phaser.Math.Between(2, 12);
-                } else {
-                    // Use a do-while loop to guarantee the new number is different
-                    do {
-                        newNumber = Phaser.Math.Between(2, 12);
-                    } while (newNumber === this.lastNumber);
-                }
-                
-                // Update the last number with the new one we just generated
-                this.lastNumber = newNumber;
-                
-                return newNumber;
+        let newNumber;
+
+        if (this.lastNumber === null) {
+           newNumber = Phaser.Math.Between(2, 12);
+        } else {
+            do {
+                newNumber = Phaser.Math.Between(2, 12);
+            } while (newNumber === this.lastNumber);
+        }
+
+        this.lastNumber = newNumber;
+
+        return newNumber;
     }
 
     generateBlobShape(centerX, centerY, radius, points) {
-
-        
-
         const shapePoints = [];
         const angleStep = (Math.PI * 2) / points;
 
         for (let i = 0; i < points; i++) {
             const angle = i * angleStep;
-            // Add some randomness to the radius for a blobby effect
             const randomRadius = radius + Phaser.Math.FloatBetween(-radius * 0.2, radius * 0.2);
             const x = centerX + Math.cos(angle) * randomRadius;
             const y = centerY + Math.sin(angle) * randomRadius;
             shapePoints.push(new Phaser.Geom.Point(x, y));
         }
         return shapePoints;
-    
-
     }
     
-
-
     generateRandomName() {
         const numSyllables = Phaser.Math.Between(2, 3);
         let name = '';
@@ -163,22 +152,25 @@ export class GameScene extends Phaser.Scene {
     }
 
     preload() {
-        // Generate placeholder assets
         this.generateCreatureAssets();
         this.generateUiAssets();
         this.load.image('FoodButton', 'assets/FoodButton.png');
         this.load.image('PlayButton', 'assets/PlayButton.png');
         this.load.image('SoapButton', 'assets/SoapButton.png');
         this.load.image('StudyButton', 'assets/StudyButton.png');
-
-        // Load syllables for name generation
         this.load.text('syllables', 'assets/syllables.txt');
     }
 
     generateMutableCreatureAssets() {
+        if (this.textures.exists('creature_body')) {
+            this.textures.remove('creature_body');
+        }
+        if (this.textures.exists('creature_limb')) {
+            this.textures.remove('creature_limb');
+        }
+
         const randomColor = Phaser.Display.Color.RandomRGB(100, 255);
 
-        // Body
         let graphics = this.make.graphics();
         graphics.fillStyle(randomColor.color, 1);
         const points = this.generateBlobShape(50, 50, 45, this.generateUniqueRandomNumber());
@@ -186,9 +178,8 @@ export class GameScene extends Phaser.Scene {
         graphics.generateTexture('creature_body', 100, 100);
         graphics.destroy();
 
-        // Limb
         graphics = this.make.graphics();
-        graphics.fillStyle(randomColor.color, 1); // Match the solid color
+        graphics.fillStyle(randomColor.color, 1);
         graphics.fillRoundedRect(0, 0, 20, 50, 8);
         graphics.generateTexture('creature_limb', 20, 50);
         graphics.destroy();
@@ -197,8 +188,10 @@ export class GameScene extends Phaser.Scene {
     generateCreatureAssets() {
         this.generateMutableCreatureAssets();
 
+        let graphics;
+
         // Eyes style 1
-        let graphics = this.make.graphics({ fillStyle: { color: 0x000000 } });
+        graphics = this.make.graphics({ fillStyle: { color: 0x000000 } });
         graphics.fillCircle(10, 10, 10);
         graphics.generateTexture('creature_eyes_1', 20, 20);
         graphics.destroy();
@@ -209,10 +202,23 @@ export class GameScene extends Phaser.Scene {
         graphics.generateTexture('creature_eyes_2', 20, 20);
         graphics.destroy();
 
+        // Eyes style 3 (vertical slit)
+        graphics = this.make.graphics({ fillStyle: { color: 0x000000 } });
+        graphics.fillRect(8, 0, 4, 20);
+        graphics.generateTexture('creature_eyes_3', 20, 20);
+        graphics.destroy();
+
+        // Eyes style 4 (X shape)
+        graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
+        graphics.lineBetween(0, 0, 20, 20);
+        graphics.lineBetween(0, 20, 20, 0);
+        graphics.generateTexture('creature_eyes_4', 20, 20);
+        graphics.destroy();
+
         // Mouth style 1 (smile)
         graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
         graphics.beginPath();
-        graphics.arc(25, 15, 10, 0, Math.PI, false); // Smaller radius, adjusted Y
+        graphics.arc(25, 15, 10, 0, Math.PI, false);
         graphics.strokePath();
         graphics.generateTexture('creature_mouth_1', 50, 25);
         graphics.destroy();
@@ -226,25 +232,41 @@ export class GameScene extends Phaser.Scene {
         // Mouth style 3 (sad)
         graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
         graphics.beginPath();
-        graphics.arc(25, 15, 10, 0, Math.PI, true); // Smaller radius, adjusted Y
+        graphics.arc(25, 15, 10, 0, Math.PI, true);
         graphics.strokePath();
         graphics.generateTexture('creature_mouth_3', 50, 30);
+        graphics.destroy();
+
+        // Mouth style 4 (wavy)
+        graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
+        graphics.beginPath();
+        graphics.moveTo(5, 10);
+        graphics.quadraticCurveTo(17.5, -5, 30, 10);
+        graphics.quadraticCurveTo(42.5, 25, 55, 10);
+        graphics.strokePath();
+        graphics.generateTexture('creature_mouth_4', 60, 20);
+        graphics.destroy();
+
+        // Mouth style 5 (O shape)
+        graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
+        graphics.strokeEllipse(25, 15, 20, 10);
+        graphics.generateTexture('creature_mouth_5', 50, 30);
         graphics.destroy();
     }
 
     generateUiAssets() {
+        let graphics;
+
         // Button
-        let graphics = this.make.graphics({ fillStyle: { color: 0x888888 } });
+        graphics = this.make.graphics({ fillStyle: { color: 0x888888 } });
         graphics.fillRoundedRect(0, 0, 200, 80, 20);
         graphics.generateTexture('ui_button', 200, 80);
         graphics.destroy();
 
         // Stat bar background
         graphics = this.make.graphics();
-        // Black border
         graphics.fillStyle(0x000000);
         graphics.fillRect(0, 0, 300, 40);
-        // Grey inner background
         graphics.fillStyle(0xcccccc);
         graphics.fillRect(2, 2, 296, 36);
         graphics.generateTexture('stat_bar_bg', 300, 40);
@@ -270,29 +292,28 @@ export class GameScene extends Phaser.Scene {
 
         // Barbell (muscle power-up)
         graphics = this.make.graphics();
-        graphics.fillStyle(0x36454F); // Charcoal
-        graphics.fillRect(0, 15, 60, 10); // Bar
-        graphics.fillRect(5, 5, 10, 30);  // Left weight
-        graphics.fillRect(45, 5, 10, 30); // Right weight
+        graphics.fillStyle(0x36454F);
+        graphics.fillRect(0, 15, 60, 10);
+        graphics.fillRect(5, 5, 10, 30);
+        graphics.fillRect(45, 5, 10, 30);
         graphics.generateTexture('powerup_barbell', 60, 40);
         graphics.destroy();
 
         // Controller (fun power-up)
         graphics = this.make.graphics();
         graphics.fillStyle(0x111111);
-        graphics.fillRoundedRect(0, 0, 80, 50, 15); // Main body
+        graphics.fillRoundedRect(0, 0, 80, 50, 15);
         graphics.fillStyle(0xdddddd);
-        graphics.fillCircle(20, 25, 8); // D-pad
+        graphics.fillCircle(20, 25, 8);
         graphics.fillStyle(0xff0000);
-        graphics.fillCircle(60, 15, 8); // Red button
+        graphics.fillCircle(60, 15, 8);
         graphics.fillStyle(0x0000ff);
-        graphics.fillCircle(70, 35, 8); // Blue button
+        graphics.fillCircle(70, 35, 8);
         graphics.generateTexture('powerup_controller', 80, 50);
         graphics.destroy();
     }
 
     create() {
-        // Initialize stats
         this.stats = {
             hygiene: 10,
             fun: 10,
@@ -303,7 +324,6 @@ export class GameScene extends Phaser.Scene {
         this.idleTimer = null;
         this.hasAchievedNirvana = false;
 
-        // Parse syllables from loaded text file
         this.syllables = this.cache.text.get('syllables').split('\n').map(s => s.trim()).filter(s => s.length > 0);
 
         this.generateAndDisplayCreature();
@@ -313,10 +333,9 @@ export class GameScene extends Phaser.Scene {
         this.updatePooPiles();
         this.resetIdleTimer();
 
-        // Power-up implementation
         this.powerupGroup = this.add.group();
         this.time.addEvent({
-            delay: 7000, // Spawn every 7 seconds
+            delay: 7000,
             callback: this.spawnPowerup,
             callbackScope: this,
             loop: true
@@ -344,7 +363,6 @@ export class GameScene extends Phaser.Scene {
             powerup.destroy();
         });
 
-        // Make power-up disappear after a while
         this.time.delayedCall(5000, () => {
             if (powerup.active) {
                 powerup.destroy();
@@ -356,10 +374,9 @@ export class GameScene extends Phaser.Scene {
         this.createStatDisplays();
         this.createScreenshotButton();
 
-        // Name Tag
         this.nameTag = this.add.text(
             this.sys.game.config.width / 2,
-            this.sys.game.config.height / 2 - 100, // Position above creature
+            this.sys.game.config.height / 2 - 100,
             `My name is ${this.creature.creatureName}`,
             {
                 fontSize: '24px',
@@ -370,8 +387,7 @@ export class GameScene extends Phaser.Scene {
             }
         ).setOrigin(0.5);
 
-        // Button positions
-        const buttonY = this.sys.game.config.height - 60; // Moved buttons down
+        const buttonY = this.sys.game.config.height - 60;
         const buttonPositions = {
             feed: this.sys.game.config.width * 0.2,
             play: this.sys.game.config.width * 0.4,
@@ -379,13 +395,11 @@ export class GameScene extends Phaser.Scene {
             study: this.sys.game.config.width * 0.8
         };
 
-        // Create buttons
         this.feedButton = this.createButton(buttonPositions.feed, buttonY, 'FoodButton');
         this.playButton = this.createButton(buttonPositions.play, buttonY, 'PlayButton');
         this.cleanButton = this.createButton(buttonPositions.clean, buttonY, 'SoapButton');
         this.studyButton = this.createButton(buttonPositions.study, buttonY, 'StudyButton');
 
-        // Add button events
         const buttons = [
             { button: this.feedButton, stat: 'muscle' },
             { button: this.playButton, stat: 'fun' },
@@ -425,7 +439,6 @@ export class GameScene extends Phaser.Scene {
     }
 
     increaseStat(stat, amount = 1) {
-        // Stop any idle animation and reset the timer
         this.creature.stopIdleAnimation();
         this.resetIdleTimer();
 
@@ -465,7 +478,6 @@ export class GameScene extends Phaser.Scene {
     createButton(x, y, key) {
         const button = this.add.sprite(x, y, key).setInteractive();
         button.setScale(0.2);
-
         return button;
     }
 
@@ -492,15 +504,13 @@ export class GameScene extends Phaser.Scene {
     createStatDisplays() {
         this.statBars = {};
         const statY1 = 50;
-        const statY2 = 150; // Increased vertical spacing
+        const statY2 = 150;
 
-        // Create stat bars
         this.statBars.hygiene = this.createStatBar(200, statY1, 'Hygiene', this.stats.hygiene);
         this.statBars.fun = this.createStatBar(200, statY2, 'Fun', this.stats.fun);
         this.statBars.muscle = this.createStatBar(this.sys.game.config.width - 200, statY1, 'Muscle', this.stats.muscle);
         this.statBars.intelligence = this.createStatBar(this.sys.game.config.width - 200, statY2, 'Intelligence', this.stats.intelligence);
 
-        // Rebirth counter
         this.rebirthText = this.add.text(this.sys.game.config.width / 2, 80, `Rebirths: ${this.rebirths}`, {
             fontSize: '40px',
             color: '#000000'
@@ -509,12 +519,10 @@ export class GameScene extends Phaser.Scene {
 
     createStatBar(x, y, label, initialValue) {
         const bg = this.add.sprite(x, y, 'stat_bar_bg').setOrigin(0.5);
-
         const bar = this.add.graphics();
         const barWidth = bg.width - 20;
         const barHeight = bg.height - 20;
 
-        // Position label below the bar
         const textLabel = this.add.text(x, y + 35, label, {
             fontSize: '24px', color: '#000000'
         }).setOrigin(0.5);
@@ -537,15 +545,14 @@ export class GameScene extends Phaser.Scene {
 
     generateAndDisplayCreature() {
         const bodyKey = 'creature_body';
-        const eyeOptions = ['creature_eyes_1', 'creature_eyes_2'];
-        const mouthOptions = ['creature_mouth_1', 'creature_mouth_2']; // Normal mouths only
+        const eyeOptions = ['creature_eyes_1', 'creature_eyes_2', 'creature_eyes_3', 'creature_eyes_4'];
+        const mouthOptions = ['creature_mouth_1', 'creature_mouth_2', 'creature_mouth_3', 'creature_mouth_4', 'creature_mouth_5'];
         const bodyRadius = 75;
 
-        // --- Generate Configs ---
         const limbConfigs = [];
         const numLimbs = Phaser.Math.Between(2, 30);
         for (let i = 0; i < numLimbs; i++) {
-            const hasMouth = Phaser.Math.RND.frac() < 0.25; // 25% chance of mouth on limb
+            const hasMouth = Phaser.Math.RND.frac() < 0.25;
             limbConfigs.push({
                 x: Math.cos(Phaser.Math.DegToRad(i * (360 / numLimbs))) * bodyRadius,
                 y: Math.sin(Phaser.Math.DegToRad(i * (360 / numLimbs))) * bodyRadius,
@@ -575,7 +582,6 @@ export class GameScene extends Phaser.Scene {
             });
         }
 
-        // --- Create Creature ---
         this.creature = new Creature(
             this,
             this.sys.game.config.width / 2,
@@ -590,7 +596,7 @@ export class GameScene extends Phaser.Scene {
 
     update() {
         if (this.hasAchievedNirvana) {
-            return; // Stop all updates if Nirvana is achieved
+            return;
         }
         this.checkCreatureMood();
         this.checkForRebirth();
@@ -600,13 +606,12 @@ export class GameScene extends Phaser.Scene {
         for (const stat in this.stats) {
             if (this.stats[stat] >= 100) {
                 this.triggerRebirth();
-                break; // Only one rebirth at a time
+                break;
             }
         }
     }
 
     triggerRebirth() {
-        // 1. Flash of light
         const flash = this.add.rectangle(0, 0, this.sys.game.config.width, this.sys.game.config.height, 0xffffff).setOrigin(0);
         flash.setAlpha(0);
         this.tweens.add({
@@ -619,14 +624,12 @@ export class GameScene extends Phaser.Scene {
             }
         });
 
-        // 2. Increment counter
         this.rebirths++;
         this.rebirthText.setText(`Rebirths: ${this.rebirths}`);
 
-        // CHECK FOR NIRVANA
         if (this.rebirths >= 100) {
             this.hasAchievedNirvana = true;
-            this.cameras.main.setBackgroundColor('#90EE90'); // Light green
+            this.cameras.main.setBackgroundColor('#90EE90');
             this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'Achieved Nirvana', {
                 fontSize: '64px',
                 color: '#ffffff',
@@ -635,7 +638,6 @@ export class GameScene extends Phaser.Scene {
                 strokeThickness: 6
             }).setOrigin(0.5);
 
-            // Stop timers and hide game elements
             this.time.removeAllEvents();
             this.creature.setVisible(false);
             this.powerupGroup.clear(true, true);
@@ -643,25 +645,17 @@ export class GameScene extends Phaser.Scene {
             return;
         }
 
-        // 3. Reset stats
         for (const stat in this.stats) {
             this.stats[stat] = 1;
         }
 
-        // 4. Update stat bars
         for (const stat in this.statBars) {
             this.statBars[stat].update(this.stats[stat]);
         }
 
-        this.generateMutableCreatureAssets();
-
-        // 5. Destroy old creature
         this.creature.destroy();
-
-        // 6. Generate new creature
+        this.generateMutableCreatureAssets();
         this.generateAndDisplayCreature();
-
-        // 7. Update name tag
         this.nameTag.setText(`My name is ${this.creature.creatureName}`);
     }
 
@@ -690,12 +684,10 @@ export class GameScene extends Phaser.Scene {
                 new ClipboardItem({ 'image/png': blob })
             ]);
             console.log('Image copied to clipboard.');
-            // Optional: Add a visual confirmation for the user
             const feedbackText = this.add.text(this.sys.game.config.width / 2, 50, 'Copied to clipboard!', { fontSize: '24px', color: '#00ff00' }).setOrigin(0.5);
             this.time.delayedCall(2000, () => feedbackText.destroy());
         } catch (err) {
             console.error('Failed to copy image: ', err);
-            // Optional: Add a visual error message for the user
             const feedbackText = this.add.text(this.sys.game.config.width / 2, 50, 'Failed to copy image.', { fontSize: '24px', color: '#ff0000' }).setOrigin(0.5);
             this.time.delayedCall(2000, () => feedbackText.destroy());
         }
