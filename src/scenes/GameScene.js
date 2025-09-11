@@ -21,8 +21,9 @@ class Creature extends Phaser.GameObjects.Container {
             // Add limb animation
             this.scene.tweens.add({
                 targets: limb,
-                angle: limb.angle + Phaser.Math.RND.pick([-45, 45]),
-                duration: Phaser.Math.Between(1000, 2000),
+                angle: limb.angle + Phaser.Math.RND.pick([-90, 90]),
+                scaleY: Phaser.Math.FloatBetween(0.5, 2.0),
+                duration: Phaser.Math.Between(500, 1500),
                 ease: 'Sine.easeInOut',
                 yoyo: true,
                 repeat: -1
@@ -70,8 +71,8 @@ class Creature extends Phaser.GameObjects.Container {
         }
         this.idleTween = this.scene.tweens.add({
             targets: this,
-            y: this.y - 10,
-            angle: { from: -5, to: 5 },
+            y: this.y - 25,
+            angle: { from: -10, to: 10 },
             duration: 1000,
             ease: 'Sine.easeInOut',
             yoyo: true,
@@ -200,8 +201,13 @@ export class GameScene extends Phaser.Scene {
         graphics.destroy();
 
         // Stat bar background
-        graphics = this.make.graphics({ fillStyle: { color: 0xcccccc } });
+        graphics = this.make.graphics();
+        // Black border
+        graphics.fillStyle(0x000000);
         graphics.fillRect(0, 0, 300, 40);
+        // Grey inner background
+        graphics.fillStyle(0xcccccc);
+        graphics.fillRect(2, 2, 296, 36);
         graphics.generateTexture('stat_bar_bg', 300, 40);
         graphics.destroy();
 
@@ -295,6 +301,7 @@ export class GameScene extends Phaser.Scene {
 
         powerup.on('pointerdown', () => {
             this.increaseStat(type.stat, type.amount);
+            this.showFloatingText(`+${type.amount}`, powerup.x, powerup.y);
             powerup.destroy();
         });
 
@@ -313,7 +320,7 @@ export class GameScene extends Phaser.Scene {
         // Name Tag
         this.nameTag = this.add.text(
             this.sys.game.config.width / 2,
-            this.sys.game.config.height - 120, // Position above buttons
+            this.sys.game.config.height / 2 - 100, // Position above creature
             `My name is ${this.creature.creatureName}`,
             {
                 fontSize: '24px',
@@ -340,10 +347,42 @@ export class GameScene extends Phaser.Scene {
         this.studyButton = this.createButton(buttonPositions.study, buttonY, 'StudyButton');
 
         // Add button events
-        this.feedButton.on('pointerdown', () => this.increaseStat('muscle'));
-        this.playButton.on('pointerdown', () => this.increaseStat('fun'));
-        this.cleanButton.on('pointerdown', () => this.increaseStat('hygiene'));
-        this.studyButton.on('pointerdown', () => this.increaseStat('intelligence'));
+        const buttons = [
+            { button: this.feedButton, stat: 'muscle' },
+            { button: this.playButton, stat: 'fun' },
+            { button: this.cleanButton, stat: 'hygiene' },
+            { button: this.studyButton, stat: 'intelligence' }
+        ];
+
+        buttons.forEach(({ button, stat }) => {
+            button.on('pointerdown', () => {
+                if (this.statIncreaseTimer) {
+                    this.statIncreaseTimer.remove();
+                }
+                this.increaseStat(stat);
+                this.showFloatingText('+1', button.x, button.y - 50);
+
+                this.statIncreaseTimer = this.time.addEvent({
+                    delay: 500,
+                    callback: () => {
+                        this.increaseStat(stat, 1);
+                        this.showFloatingText('+1', button.x, button.y - 50);
+                    },
+                    callbackScope: this,
+                    loop: true
+                });
+            });
+
+            const stopTimer = () => {
+                if (this.statIncreaseTimer) {
+                    this.statIncreaseTimer.remove();
+                    this.statIncreaseTimer = null;
+                }
+            };
+
+            button.on('pointerup', stopTimer);
+            button.on('pointerout', stopTimer);
+        });
     }
 
     increaseStat(stat, amount = 1) {
@@ -388,15 +427,27 @@ export class GameScene extends Phaser.Scene {
         const button = this.add.sprite(x, y, key).setInteractive();
         button.setScale(0.2);
 
-        // Add hover effect
-        button.on('pointerover', () => {
-            button.setTint(0xcccccc);
-        });
-        button.on('pointerout', () => {
-            button.clearTint();
-        });
-
         return button;
+    }
+
+    showFloatingText(text, x, y) {
+        const floatingText = this.add.text(x, y, text, {
+            fontSize: '32px',
+            color: '#ff0000',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+
+        this.tweens.add({
+            targets: floatingText,
+            y: y - 50,
+            alpha: 0,
+            duration: 1000,
+            ease: 'Power1',
+            onComplete: () => {
+                floatingText.destroy();
+            }
+        });
     }
 
     createStatDisplays() {
