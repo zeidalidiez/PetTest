@@ -96,6 +96,7 @@ export class GameScene extends Phaser.Scene {
     constructor() {
         super('GameScene');
         this.syllables = []; // Will be populated from file
+        this.lastNumber = null;
     }
 
     generateUniqueRandomNumber() {
@@ -110,16 +111,10 @@ export class GameScene extends Phaser.Scene {
                         newNumber = Phaser.Math.Between(2, 12);
                     } while (newNumber === this.lastNumber);
                 }
-
-                // Update the text to show the previous number
-                this.lastNumberText.setText(`Previous: ${this.lastNumber !== null ? this.lastNumber : '-'}`);
                 
                 // Update the last number with the new one we just generated
                 this.lastNumber = newNumber;
                 
-                // Display the new number of points
-                this.currentNumberText.setText(`Points: ${this.lastNumber}`);
-
                 return newNumber;
     }
 
@@ -128,7 +123,7 @@ export class GameScene extends Phaser.Scene {
         
 
         const shapePoints = [];
-        const angleStep = (Math.PI * generateUniqueRandomNumber) / points;
+        const angleStep = (Math.PI * 2) / points;
 
         for (let i = 0; i < points; i++) {
             const angle = i * angleStep;
@@ -177,7 +172,7 @@ export class GameScene extends Phaser.Scene {
         graphics.fillStyle(randomColor.color, 1);
 
         // Feature: Generate a random polygon for the body shape
-        const points = this.generateBlobShape(50, 50, 45, Phaser.Math.Between(8, 20));
+        const points = this.generateBlobShape(50, 50, 45, this.generateUniqueRandomNumber());
         graphics.fillPoints(points, true);
 
         graphics.generateTexture('creature_body', 100, 100);
