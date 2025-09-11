@@ -201,8 +201,13 @@ export class GameScene extends Phaser.Scene {
         graphics.destroy();
 
         // Stat bar background
-        graphics = this.make.graphics({ fillStyle: { color: 0xcccccc } });
+        graphics = this.make.graphics();
+        // Black border
+        graphics.fillStyle(0x000000);
         graphics.fillRect(0, 0, 300, 40);
+        // Grey inner background
+        graphics.fillStyle(0xcccccc);
+        graphics.fillRect(2, 2, 296, 36);
         graphics.generateTexture('stat_bar_bg', 300, 40);
         graphics.destroy();
 
@@ -296,6 +301,7 @@ export class GameScene extends Phaser.Scene {
 
         powerup.on('pointerdown', () => {
             this.increaseStat(type.stat, type.amount);
+            this.showFloatingText(`+${type.amount}`, powerup.x, powerup.y);
             powerup.destroy();
         });
 
@@ -314,7 +320,7 @@ export class GameScene extends Phaser.Scene {
         // Name Tag
         this.nameTag = this.add.text(
             this.sys.game.config.width / 2,
-            this.sys.game.config.height - 120, // Position above buttons
+            this.sys.game.config.height / 2 - 100, // Position above creature
             `My name is ${this.creature.creatureName}`,
             {
                 fontSize: '24px',
@@ -354,9 +360,14 @@ export class GameScene extends Phaser.Scene {
                     this.statIncreaseTimer.remove();
                 }
                 this.increaseStat(stat);
+                this.showFloatingText('+1', button.x, button.y - 50);
+
                 this.statIncreaseTimer = this.time.addEvent({
                     delay: 500,
-                    callback: () => this.increaseStat(stat, 1),
+                    callback: () => {
+                        this.increaseStat(stat, 1);
+                        this.showFloatingText('+1', button.x, button.y - 50);
+                    },
                     callbackScope: this,
                     loop: true
                 });
@@ -417,6 +428,26 @@ export class GameScene extends Phaser.Scene {
         button.setScale(0.2);
 
         return button;
+    }
+
+    showFloatingText(text, x, y) {
+        const floatingText = this.add.text(x, y, text, {
+            fontSize: '32px',
+            color: '#ff0000',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+
+        this.tweens.add({
+            targets: floatingText,
+            y: y - 50,
+            alpha: 0,
+            duration: 1000,
+            ease: 'Power1',
+            onComplete: () => {
+                floatingText.destroy();
+            }
+        });
     }
 
     createStatDisplays() {
