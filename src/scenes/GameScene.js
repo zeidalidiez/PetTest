@@ -238,12 +238,12 @@ export class GameScene extends Phaser.Scene {
         graphics.destroy();
 
         // Mouth style 4 (wavy)
-        graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
-        graphics.beginPath();
-        graphics.moveTo(5, 10);
-        graphics.quadraticBezierTo(17.5, -5, 30, 10);
-        graphics.quadraticBezierTo(42.5, 25, 55, 10);
-        graphics.strokePath();
+        graphics = this.make.graphics();
+        const path = new Phaser.Curves.Path(5, 10);
+        path.quadraticBezierTo(new Phaser.Math.Vector2(17.5, -5), new Phaser.Math.Vector2(30, 10));
+        path.quadraticBezierTo(new Phaser.Math.Vector2(42.5, 25), new Phaser.Math.Vector2(55, 10));
+        graphics.lineStyle(4, 0x000000);
+        path.draw(graphics);
         graphics.generateTexture('creature_mouth_4', 60, 20);
         graphics.destroy();
 
