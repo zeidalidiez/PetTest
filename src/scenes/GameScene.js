@@ -89,6 +89,16 @@ class Creature extends Phaser.GameObjects.Container {
             this.angle = 0;
         }
     }
+
+    destroy(fromScene) {
+        // Destroy all children
+        this.list.forEach(child => {
+            child.destroy(fromScene);
+        });
+
+        // Call the parent's destroy method
+        super.destroy(fromScene);
+    }
 }
 
 export class GameScene extends Phaser.Scene {
@@ -294,7 +304,7 @@ export class GameScene extends Phaser.Scene {
         this.hasAchievedNirvana = false;
 
         // Parse syllables from loaded text file
-        this.syllables = this.cache.text.get('syllables').split('\n').filter(s => s.length > 0);
+        this.syllables = this.cache.text.get('syllables').split('\n').map(s => s.trim()).filter(s => s.length > 0);
 
         this.generateAndDisplayCreature();
         this.createUI();
