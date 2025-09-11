@@ -128,6 +128,10 @@ export class GameScene extends Phaser.Scene {
         // Generate placeholder assets
         this.generateCreatureAssets();
         this.generateUiAssets();
+        this.load.image('FoodButton', 'assets/FoodButton.png');
+        this.load.image('PlayButton', 'assets/PlayButton.png');
+        this.load.image('SoapButton', 'assets/SoapButton.png');
+        this.load.image('StudyButton', 'assets/StudyButton.png');
 
         // Load syllables for name generation
         this.load.text('syllables', 'assets/syllables.txt');
@@ -140,7 +144,7 @@ export class GameScene extends Phaser.Scene {
         graphics.fillStyle(randomColor.color, 1);
 
         // Feature: Generate a random polygon for the body shape
-        const points = this.generateBlobShape(50, 50, 45, 12);
+        const points = this.generateBlobShape(50, 50, 45, Phaser.Math.Between(8, 20));
         graphics.fillPoints(points, true);
 
         graphics.generateTexture('creature_body', 100, 100);
@@ -330,10 +334,10 @@ export class GameScene extends Phaser.Scene {
         };
 
         // Create buttons
-        this.feedButton = this.createButton(buttonPositions.feed, buttonY, 'Feed');
-        this.playButton = this.createButton(buttonPositions.play, buttonY, 'Play');
-        this.cleanButton = this.createButton(buttonPositions.clean, buttonY, 'Clean');
-        this.studyButton = this.createButton(buttonPositions.study, buttonY, 'Study');
+        this.feedButton = this.createButton(buttonPositions.feed, buttonY, 'FoodButton');
+        this.playButton = this.createButton(buttonPositions.play, buttonY, 'PlayButton');
+        this.cleanButton = this.createButton(buttonPositions.clean, buttonY, 'SoapButton');
+        this.studyButton = this.createButton(buttonPositions.study, buttonY, 'StudyButton');
 
         // Add button events
         this.feedButton.on('pointerdown', () => this.increaseStat('muscle'));
@@ -380,15 +384,9 @@ export class GameScene extends Phaser.Scene {
         }
     }
 
-    createButton(x, y, text) {
-        const button = this.add.sprite(x, y, 'ui_button').setInteractive();
-        button.setScale(0.8);
-
-        const buttonText = this.add.text(x, y, text, {
-            fontSize: '32px',
-            color: '#ffffff',
-            align: 'center'
-        }).setOrigin(0.5);
+    createButton(x, y, key) {
+        const button = this.add.sprite(x, y, key).setInteractive();
+        button.setScale(0.2);
 
         // Add hover effect
         button.on('pointerover', () => {
@@ -455,7 +453,7 @@ export class GameScene extends Phaser.Scene {
 
         // --- Generate Configs ---
         const limbConfigs = [];
-        const numLimbs = Phaser.Math.Between(2, 8);
+        const numLimbs = Phaser.Math.Between(4, 12);
         for (let i = 0; i < numLimbs; i++) {
             const hasMouth = Phaser.Math.RND.frac() < 0.25; // 25% chance of mouth on limb
             limbConfigs.push({
