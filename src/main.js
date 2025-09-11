@@ -10,7 +10,7 @@ const config = {
     dom: {
         createContainer: true
     },
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#d1d1d2',
     pixelArt: false,
     scene: [
         GameScene
