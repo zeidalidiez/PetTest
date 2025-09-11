@@ -165,16 +165,14 @@ export class GameScene extends Phaser.Scene {
         this.load.text('syllables', 'assets/syllables.txt');
     }
 
-    generateCreatureAssets() {
-        // Body
+    generateMutableCreatureAssets() {
         const randomColor = Phaser.Display.Color.RandomRGB(100, 255);
+
+        // Body
         let graphics = this.make.graphics();
         graphics.fillStyle(randomColor.color, 1);
-
-        // Feature: Generate a random polygon for the body shape
         const points = this.generateBlobShape(50, 50, 45, this.generateUniqueRandomNumber());
         graphics.fillPoints(points, true);
-
         graphics.generateTexture('creature_body', 100, 100);
         graphics.destroy();
 
@@ -184,9 +182,13 @@ export class GameScene extends Phaser.Scene {
         graphics.fillRoundedRect(0, 0, 20, 50, 8);
         graphics.generateTexture('creature_limb', 20, 50);
         graphics.destroy();
+    }
+
+    generateCreatureAssets() {
+        this.generateMutableCreatureAssets();
 
         // Eyes style 1
-        graphics = this.make.graphics({ fillStyle: { color: 0x000000 } });
+        let graphics = this.make.graphics({ fillStyle: { color: 0x000000 } });
         graphics.fillCircle(10, 10, 10);
         graphics.generateTexture('creature_eyes_1', 20, 20);
         graphics.destroy();
@@ -640,6 +642,8 @@ export class GameScene extends Phaser.Scene {
         for (const stat in this.statBars) {
             this.statBars[stat].update(this.stats[stat]);
         }
+
+        this.generateMutableCreatureAssets();
 
         // 5. Destroy old creature
         this.creature.destroy();
