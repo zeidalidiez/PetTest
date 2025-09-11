@@ -98,9 +98,37 @@ export class GameScene extends Phaser.Scene {
         this.syllables = []; // Will be populated from file
     }
 
+    generateUniqueRandomNumber() {
+                let newNumber;
+                
+                // If there's no last number, we don't need to check for uniqueness
+                if (this.lastNumber === null) {
+                   newNumber = Phaser.Math.Between(2, 12);
+                } else {
+                    // Use a do-while loop to guarantee the new number is different
+                    do {
+                        newNumber = Phaser.Math.Between(2, 12);
+                    } while (newNumber === this.lastNumber);
+                }
+
+                // Update the text to show the previous number
+                this.lastNumberText.setText(`Previous: ${this.lastNumber !== null ? this.lastNumber : '-'}`);
+                
+                // Update the last number with the new one we just generated
+                this.lastNumber = newNumber;
+                
+                // Display the new number of points
+                this.currentNumberText.setText(`Points: ${this.lastNumber}`);
+
+                return newNumber;
+    }
+
     generateBlobShape(centerX, centerY, radius, points) {
+
+        
+
         const shapePoints = [];
-        const angleStep = (Math.PI * 2) / points;
+        const angleStep = (Math.PI * generateUniqueRandomNumber) / points;
 
         for (let i = 0; i < points; i++) {
             const angle = i * angleStep;
@@ -111,14 +139,18 @@ export class GameScene extends Phaser.Scene {
             shapePoints.push(new Phaser.Geom.Point(x, y));
         }
         return shapePoints;
+    
+
     }
+    
+
 
     generateRandomName() {
-        const numSyllables = Phaser.Math.Between(2, 4);
+        const numSyllables = Phaser.Math.Between(2, 3);
         let name = '';
         for (let i = 0; i < numSyllables; i++) {
             name += Phaser.Math.RND.pick(this.syllables);
-            if (i < numSyllables - 1 && Phaser.Math.RND.frac() < 0.2) {
+            if (i < numSyllables - 1 && Phaser.Math.RND.frac() < 0.1) {
                 name += ' '; // 20% chance of a space
             }
         }
@@ -255,10 +287,10 @@ export class GameScene extends Phaser.Scene {
     create() {
         // Initialize stats
         this.stats = {
-            hygiene: 50,
-            fun: 50,
-            muscle: 50,
-            intelligence: 50
+            hygiene: 10,
+            fun: 10,
+            muscle: 10,
+            intelligence: 10
         };
         this.rebirths = 0;
         this.idleTimer = null;
@@ -287,8 +319,8 @@ export class GameScene extends Phaser.Scene {
     spawnPowerup() {
         const powerupTypes = [
             { key: 'powerup_book', stat: 'intelligence', amount: 15 },
-            { key: 'powerup_soap', stat: 'hygiene', amount: 10 },
-            { key: 'powerup_barbell', stat: 'muscle', amount: 10 },
+            { key: 'powerup_soap', stat: 'hygiene', amount: 15 },
+            { key: 'powerup_barbell', stat: 'muscle', amount: 15 },
             { key: 'powerup_controller', stat: 'fun', amount: 15 }
         ];
 
@@ -365,7 +397,7 @@ export class GameScene extends Phaser.Scene {
                 this.statIncreaseTimer = this.time.addEvent({
                     delay: 500,
                     callback: () => {
-                        this.increaseStat(stat, 1);
+                        this.increaseStat(stat, 20);
                         this.showFloatingText('+1', button.x, button.y - 50);
                     },
                     callbackScope: this,
@@ -500,11 +532,11 @@ export class GameScene extends Phaser.Scene {
         const bodyKey = 'creature_body';
         const eyeOptions = ['creature_eyes_1', 'creature_eyes_2'];
         const mouthOptions = ['creature_mouth_1', 'creature_mouth_2']; // Normal mouths only
-        const bodyRadius = 50;
+        const bodyRadius = 75;
 
         // --- Generate Configs ---
         const limbConfigs = [];
-        const numLimbs = Phaser.Math.Between(4, 12);
+        const numLimbs = Phaser.Math.Between(2, 30);
         for (let i = 0; i < numLimbs; i++) {
             const hasMouth = Phaser.Math.RND.frac() < 0.25; // 25% chance of mouth on limb
             limbConfigs.push({
@@ -517,7 +549,7 @@ export class GameScene extends Phaser.Scene {
         }
 
         const eyeConfigs = [];
-        const numEyes = Phaser.Math.Between(1, 4);
+        const numEyes = Phaser.Math.Between(1, 24);
         for (let i = 0; i < numEyes; i++) {
             eyeConfigs.push({
                 x: Phaser.Math.Between(-35, 35),
@@ -527,7 +559,7 @@ export class GameScene extends Phaser.Scene {
         }
 
         const mouthConfigs = [];
-        const numMouths = Phaser.Math.Between(1, 2);
+        const numMouths = Phaser.Math.Between(1, 6);
         for (let i = 0; i < numMouths; i++) {
             mouthConfigs.push({
                 x: Phaser.Math.Between(-20, 20),
@@ -606,7 +638,7 @@ export class GameScene extends Phaser.Scene {
 
         // 3. Reset stats
         for (const stat in this.stats) {
-            this.stats[stat] = 50;
+            this.stats[stat] = 1;
         }
 
         // 4. Update stat bars
