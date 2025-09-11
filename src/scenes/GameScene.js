@@ -210,8 +210,8 @@ export class GameScene extends Phaser.Scene {
 
         // Eyes style 4 (X shape)
         graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
-        graphics.lineBetween(0, 0, 20, 20);
-        graphics.lineBetween(0, 20, 20, 0);
+        graphics.strokeLineShape(new Phaser.Geom.Line(0, 0, 20, 20));
+        graphics.strokeLineShape(new Phaser.Geom.Line(0, 20, 20, 0));
         graphics.generateTexture('creature_eyes_4', 20, 20);
         graphics.destroy();
 
@@ -225,7 +225,7 @@ export class GameScene extends Phaser.Scene {
 
         // Mouth style 2 (straight)
         graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
-        graphics.lineBetween(5, 5, 45, 5);
+        graphics.strokeLineShape(new Phaser.Geom.Line(5, 5, 45, 5));
         graphics.generateTexture('creature_mouth_2', 50, 10);
         graphics.destroy();
 
@@ -241,8 +241,8 @@ export class GameScene extends Phaser.Scene {
         graphics = this.make.graphics({ lineStyle: { width: 4, color: 0x000000 } });
         graphics.beginPath();
         graphics.moveTo(5, 10);
-        graphics.quadraticCurveTo(17.5, -5, 30, 10);
-        graphics.quadraticCurveTo(42.5, 25, 55, 10);
+        graphics.quadraticBezierTo(17.5, -5, 30, 10);
+        graphics.quadraticBezierTo(42.5, 25, 55, 10);
         graphics.strokePath();
         graphics.generateTexture('creature_mouth_4', 60, 20);
         graphics.destroy();
